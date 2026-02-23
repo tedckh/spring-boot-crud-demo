@@ -1,15 +1,18 @@
 package com.example.demo.repository;
 
 import com.example.demo.model.Task;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Integer> {
-  List<Task> findByTitle(String title);
+  Page<Task> findByTitle(String title, Pageable pageable);
 
-  List<Task> findByTitleContainingIgnoreCase(String keyword);
+  Page<Task> findByTitleContainingIgnoreCase(String keyword, Pageable pageable);
 
-  List<Task> findByCompleted(boolean completed);
+  Page<Task> findByCompleted(boolean completed, Pageable pageable);
+
+  Page<Task> findByTitleContainingIgnoreCaseAndCompleted(String keyword, boolean completed, Pageable pageable);
 }

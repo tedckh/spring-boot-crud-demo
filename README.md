@@ -41,6 +41,13 @@ You can run the application using the included Maven Wrapper: ./mvnw spring-boot
 
 The API server will start on `http://localhost:8080`.
 
+### Configuration
+
+Before running the application, you need to set up your configuration:
+
+1. Create a copy of the `application.properties.example` file and name it `application.properties`.
+2. Open the new `application.properties` file and fill in your database `username` and `password`.
+
 ## API Endpoints
 
 The base URL for the API is `http://localhost:8080/api/tasks`.

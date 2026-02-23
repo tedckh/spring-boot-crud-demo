@@ -5,12 +5,13 @@ This project demonstrates a robust RESTful CRUD (Create, Read, Update, Delete) A
 ## Key Features & Improvements
 
 *   **Clean Architecture:** Structured into distinct layers (controller, service, repository, model, dto, exception, mapper) for improved maintainability and scalability.
-*   **Data Transfer Objects (DTOs):** Utilizes DTOs (`CreateTaskRequest`, `UpdateTaskRequest`, `TaskResponse`, `ErrorResponse`) to decouple the API contract from the internal domain model and enhance security.
+*   **Data Transfer Objects (DTOs):** Utilizes DTOs to decouple the API contract from the internal domain model and enhance security.
+*   **Custom API Response Envelope:** All API responses are wrapped in a consistent JSON structure (`statusCode`, `data`, `error`) for predictable client-side handling.
 *   **Input Validation:** Implements robust server-side validation using Jakarta Bean Validation to ensure data integrity for incoming requests.
 *   **Centralized Exception Handling:** Provides consistent, structured JSON error responses across the API using a global exception handler.
-*   **Pagination & Sorting:** Efficiently retrieves and presents large datasets with built-in support for pagination and dynamic sorting.
+*   **Custom Pagination & Sorting:** Supports custom query parameters (`offset`, `limit`, `sortBy`) for efficient data retrieval.
 *   **Structured Logging:** Enhanced application observability with meaningful log statements across service and controller layers.
-*   **Comprehensive Testing:** Includes both unit tests (for business logic in services) and integration tests (for API endpoints via MockMvc).
+*   **Comprehensive Testing:** Includes both unit tests (for business logic) and integration tests (for API endpoints).
 *   **Dockerization:** Ready for containerized deployment with a provided `Dockerfile`.
 *   **Database:** Configured to connect to a PostgreSQL database.
 
@@ -73,27 +74,78 @@ The base URL for the API is `http://localhost:8080/api/tasks`.
 
 ### `Task` Resource Endpoints
 
-| Method   | Path              | Description                                                         | Request Body Example (for POST/PUT)                          |
-| :------- | :---------------- | :------------------------------------------------------------------ | :----------------------------------------------------------- |
-| `POST`   | `/api/tasks`      | Creates a new task.                                                 | `{"title":"Learn Spring Boot", "completed":false}`           |
-| `GET`    | `/api/tasks`      | Retrieves all tasks with optional title, completed status, pagination, and sorting. | (None)                                                       |
-| `GET`    | `/api/tasks/{id}` | Retrieves a single task by its ID.                                  | (None)                                                       |
-| `PUT`    | `/api/tasks/{id}` | Updates an existing task by ID.                                     | `{"title":"Master Spring Boot", "completed":true}`           |
-| `DELETE` | `/api/tasks/{id}` | Deletes a task by its ID.                                           | (None)                                                       |
+| Method   | Path              | Description                                                         |
+| :------- | :---------------- | :------------------------------------------------------------------ |
+| `POST`   | `/api/tasks`      | Creates a new task.                                                 |
+| `GET`    | `/api/tasks`      | Retrieves all tasks with optional title, completed status, pagination, and sorting. |
+| `GET`    | `/api/tasks/{id}` | Retrieves a single task by its ID.                                  |
+| `PUT`    | `/api/tasks/{id}` | Updates an existing task by ID.                                     |
+| `DELETE` | `/api/tasks/{id}` | Deletes a task by its ID.                                           |
 
 ### Filtering, Pagination and Sorting Parameters (for GET /api/tasks)
 
 You can append the following query parameters to `GET /api/tasks`:
 *   `title`: (Optional) Filter tasks by title (case-insensitive substring match).
 *   `completed`: (Optional) Filter tasks by completion status (`true` or `false`).
-*   `page`: (Optional) Zero-based page index (default: `0`).
-*   `size`: (Optional) Number of items per page (default: `20`).
-*   `sort`: (Optional) Sorting criteria in the format `property,(asc|desc)`. Default sort direction is ascending. Multiple sort criteria are supported (e.g., `sort=title,asc&sort=id,desc`).
+*   `offset`: (Optional) The starting index of the results (default: `0`).
+*   `limit`: (Optional) The maximum number of items to return (default: `20`).
+*   `sortBy`: (Optional) Sorting criteria in the format `property` (ascending) or `-property` (descending). Default sort is by `id` ascending.
 
 **Examples:**
-*   `GET /api/tasks?title=spring&completed=false&page=0&size=5&sort=title,asc`
-*   `GET /api/tasks?completed=true`
-*   `GET /api/tasks?sort=id,desc`
+*   `GET /api/tasks?title=spring&completed=false&offset=0&limit=5&sortBy=title`
+*   `GET /api/tasks?completed=true&sortBy=-id`
+
+## API Response Structure
+
+All API responses are wrapped in a standard JSON envelope for consistency.
+
+### Successful Response (Single Item)
+For `GET /api/tasks/{id}`, `POST /api/tasks`, `PUT /api/tasks/{id}`. The `statusCode` will reflect the HTTP status (e.g., `200` for OK, `201` for Created).
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "id": 1,
+        "title": "Learn Spring Boot",
+        "completed": false
+    }
+}
+```
+
+### Successful Response (Paginated List)
+For `GET /api/tasks`.
+```json
+{
+    "statusCode": 200,
+    "data": {
+        "list": [
+            {
+                "id": 1,
+                "title": "Learn Spring Boot",
+                "completed": false
+            },
+            {
+                "id": 2,
+                "title": "Write some tests",
+                "completed": true
+            }
+        ],
+        "total": 2
+    }
+}
+```
+
+### Error Response
+For any failed request (e.g., validation error, item not found).
+```json
+{
+    "statusCode": 404,
+    "data": null,
+    "error": {
+        "message": "Task not found with id: 99"
+    }
+}
+```
 
 ## Testing
 
@@ -125,12 +177,3 @@ Ensure your PostgreSQL container is running and accessible (as per "Setup and Ru
 docker run -p 8080:8080 spring-boot-task-api
 ```
 Your API will be available at `http://localhost:8080`.
-
-## Next Steps (Potential Further Improvements)
-
-*   **Security:** Implement authentication (e.g., JWT) and authorization.
-*   **More Advanced Logging:** Centralize logs with ELK stack, structured JSON logging.
-*   **API Documentation:** Integrate Swagger/OpenAPI for interactive API documentation.
-*   **Database Migrations:** Use Flyway or Liquibase for version-controlled database schema changes.
-*   **Error Handling Refinement:** More granular custom exceptions.
-*   **Performance Optimization:** Caching, database query optimization.

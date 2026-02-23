@@ -13,41 +13,43 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.example.demo.dto.ErrorResponse;
+import com.example.demo.dto.ApiResponse;
 
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    // Handles validation errors
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 
-        String message = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST, "Validation error", ex);
-        errorResponse.setMessage(message);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        ApiResponse<Object> apiResponse = ApiResponse.error(status.value(), errors);
+        return new ResponseEntity<>(apiResponse, status);
     }
 
-    // Handles exceptions that are already a ResponseStatusException (like our "Not Found")
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Object> handleResponseStatusException(ResponseStatusException ex) {
-        ErrorResponse errorResponse = new ErrorResponse((HttpStatus) ex.getStatusCode(), ex.getReason(), ex);
-        return new ResponseEntity<>(errorResponse, ex.getStatusCode());
+    public ResponseEntity<ApiResponse<Object>> handleResponseStatusException(ResponseStatusException ex) {
+        Map<String, String> errorDetails = new HashMap<>();
+        errorDetails.put("message", ex.getReason());
+
+        ApiResponse<Object> apiResponse = ApiResponse.error(ex.getStatusCode().value(), errorDetails);
+        return new ResponseEntity<>(apiResponse, ex.getStatusCode());
     }
 
-    // Fallback for any other exception
     @ExceptionHandler({ Exception.class })
-    public ResponseEntity<Object> handleAll(Exception ex, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", ex);
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ApiResponse<Object>> handleAll(Exception ex, WebRequest request) {
+        Map<String, String> errorDetails = new HashMap<>();
+        errorDetails.put("message", "An unexpected error occurred");
+        errorDetails.put("detail", ex.getLocalizedMessage());
+
+        ApiResponse<Object> apiResponse = ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), errorDetails);
+        return new ResponseEntity<>(apiResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

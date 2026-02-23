@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,16 +40,31 @@ class TaskControllerIntegrationTest {
         private MockMvc mockMvc;
 
         @Autowired
-        private ObjectMapper objectMapper; // To convert objects to JSON strings
+        private ObjectMapper objectMapper;
 
         @MockBean
-        private TaskService taskService; // Mock the service layer
+        private TaskService taskService;
 
         private TaskResponse createTaskResponse(Integer id, String title, boolean completed) {
                 return new TaskResponse(id, title, completed);
         }
 
-        private Pageable pageable = PageRequest.of(0, 10);
+        private Pageable createPageable(int offset, int limit, String sortBy) {
+                Sort sort = Sort.unsorted();
+                if (sortBy != null && !sortBy.isEmpty()) {
+                        String property = sortBy;
+                        Sort.Direction direction = Sort.Direction.ASC;
+                        if (sortBy.startsWith("-")) {
+                                property = sortBy.substring(1);
+                                direction = Sort.Direction.DESC;
+                        }
+                        sort = Sort.by(direction, property);
+                } else {
+                        sort = Sort.by("id");
+                }
+                int page = offset / limit;
+                return PageRequest.of(page, limit, sort);
+        }
 
         @Test
         void createTask_shouldReturnCreatedTask_whenValidRequest() throws Exception {
@@ -63,90 +79,125 @@ class TaskControllerIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.id").value(1))
-                                .andExpect(jsonPath("$.title").value("New Test Task"))
-                                .andExpect(jsonPath("$.completed").value(false));
+                                .andExpect(jsonPath("$.statusCode").value(201))
+                                .andExpect(jsonPath("$.data.id").value(1))
+                                .andExpect(jsonPath("$.data.title").value("New Test Task"))
+                                .andExpect(jsonPath("$.error").doesNotExist());
         }
 
         @Test
         void createTask_shouldReturnBadRequest_whenInvalidRequest() throws Exception {
                 CreateTaskRequest request = new CreateTaskRequest();
-                request.setTitle("   "); // Invalid title (blank)
-                request.setCompleted(false);
+                request.setTitle("   ");
 
                 mockMvc.perform(post("/api/tasks")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").exists()); // GlobalExceptionHandler will catch this
+                                .andExpect(jsonPath("$.statusCode").value(400))
+                                .andExpect(jsonPath("$.error.title").value("Title cannot be blank"))
+                                .andExpect(jsonPath("$.data").doesNotExist());
         }
 
         @Test
         void getAllTasks_noFilters_shouldReturnPageOfAllTasks() throws Exception {
+                int offset = 0;
+                int limit = 10;
+                String sortBy = "id";
+                Pageable pageableForService = createPageable(offset, limit, sortBy);
+
                 List<TaskResponse> tasks = Arrays.asList(
                                 createTaskResponse(1, "Task 1", false),
                                 createTaskResponse(2, "Task 2", true));
-                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageable, tasks.size());
-                when(taskService.getAllTasks(eq(null), eq(null), any(Pageable.class))).thenReturn(taskPage);
+                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageableForService, tasks.size());
+                when(taskService.getAllTasks(eq(null), eq(null), eq(pageableForService))).thenReturn(taskPage);
 
                 mockMvc.perform(get("/api/tasks")
-                                .param("page", "0")
-                                .param("size", "10")
-                                .param("sort", "title,asc")
+                                .param("offset", String.valueOf(offset))
+                                .param("limit", String.valueOf(limit))
+                                .param("sortBy", sortBy)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.content.length()").value(2))
-                                .andExpect(jsonPath("$.content[0].title").value("Task 1"))
-                                .andExpect(jsonPath("$.totalElements").value(2));
+                                .andExpect(jsonPath("$.statusCode").value(200))
+                                .andExpect(jsonPath("$.data.list.length()").value(2))
+                                .andExpect(jsonPath("$.data.list[0].title").value("Task 1"))
+                                .andExpect(jsonPath("$.data.total").value(2));
         }
 
         @Test
         void getAllTasks_filterByTitle_shouldReturnPageOfFilteredTasks() throws Exception {
+                int offset = 0;
+                int limit = 10;
+                String sortBy = "id";
+                String titleFilter = "Filtered";
+                Pageable pageableForService = createPageable(offset, limit, sortBy);
+
                 List<TaskResponse> tasks = Arrays.asList(createTaskResponse(1, "Filtered Task", false));
-                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageable, tasks.size());
-                when(taskService.getAllTasks(eq("Filtered"), eq(null), any(Pageable.class))).thenReturn(taskPage);
+                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageableForService, tasks.size());
+                when(taskService.getAllTasks(eq(titleFilter), eq(null), eq(pageableForService))).thenReturn(taskPage);
 
                 mockMvc.perform(get("/api/tasks")
-                                .param("title", "Filtered")
-                                .param("page", "0")
-                                .param("size", "10")
+                                .param("title", titleFilter)
+                                .param("offset", String.valueOf(offset))
+                                .param("limit", String.valueOf(limit))
+                                .param("sortBy", sortBy)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.content.length()").value(1))
-                                .andExpect(jsonPath("$.content[0].title").value("Filtered Task"));
+                                .andExpect(jsonPath("$.statusCode").value(200))
+                                .andExpect(jsonPath("$.data.list.length()").value(1))
+                                .andExpect(jsonPath("$.data.list[0].title").value("Filtered Task"));
         }
 
         @Test
         void getAllTasks_filterByCompleted_shouldReturnPageOfFilteredTasks() throws Exception {
+                int offset = 0;
+                int limit = 10;
+                String sortBy = "id";
+                Boolean completedFilter = true;
+                Pageable pageableForService = createPageable(offset, limit, sortBy);
+
                 List<TaskResponse> tasks = Arrays.asList(createTaskResponse(2, "Completed Task", true));
-                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageable, tasks.size());
-                when(taskService.getAllTasks(eq(null), eq(true), any(Pageable.class))).thenReturn(taskPage);
+                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageableForService, tasks.size());
+                when(taskService.getAllTasks(eq(null), eq(completedFilter), eq(pageableForService)))
+                                .thenReturn(taskPage);
 
                 mockMvc.perform(get("/api/tasks")
-                                .param("completed", "true")
-                                .param("page", "0")
-                                .param("size", "10")
+                                .param("completed", String.valueOf(completedFilter))
+                                .param("offset", String.valueOf(offset))
+                                .param("limit", String.valueOf(limit))
+                                .param("sortBy", sortBy)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.content.length()").value(1))
-                                .andExpect(jsonPath("$.content[0].title").value("Completed Task"));
+                                .andExpect(jsonPath("$.statusCode").value(200))
+                                .andExpect(jsonPath("$.data.list.length()").value(1))
+                                .andExpect(jsonPath("$.data.list[0].title").value("Completed Task"));
         }
 
         @Test
         void getAllTasks_filterByTitleAndCompleted_shouldReturnPageOfFilteredTasks() throws Exception {
+                int offset = 0;
+                int limit = 10;
+                String sortBy = "id";
+                String titleFilter = "Filtered";
+                Boolean completedFilter = true;
+                Pageable pageableForService = createPageable(offset, limit, sortBy);
+
                 List<TaskResponse> tasks = Arrays.asList(createTaskResponse(3, "Filtered Completed Task", true));
-                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageable, tasks.size());
-                when(taskService.getAllTasks(eq("Filtered"), eq(true), any(Pageable.class))).thenReturn(taskPage);
+                Page<TaskResponse> taskPage = new PageImpl<>(tasks, pageableForService, tasks.size());
+                when(taskService.getAllTasks(eq(titleFilter), eq(completedFilter), eq(pageableForService)))
+                                .thenReturn(taskPage);
 
                 mockMvc.perform(get("/api/tasks")
-                                .param("title", "Filtered")
-                                .param("completed", "true")
-                                .param("page", "0")
-                                .param("size", "10")
+                                .param("title", titleFilter)
+                                .param("completed", String.valueOf(completedFilter))
+                                .param("offset", String.valueOf(offset))
+                                .param("limit", String.valueOf(limit))
+                                .param("sortBy", sortBy)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.content.length()").value(1))
-                                .andExpect(jsonPath("$.content[0].title").value("Filtered Completed Task"));
+                                .andExpect(jsonPath("$.statusCode").value(200))
+                                .andExpect(jsonPath("$.data.list.length()").value(1))
+                                .andExpect(jsonPath("$.data.list[0].title").value("Filtered Completed Task"));
         }
 
         @Test
@@ -157,8 +208,9 @@ class TaskControllerIntegrationTest {
                 mockMvc.perform(get("/api/tasks/{id}", 1)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.id").value(1))
-                                .andExpect(jsonPath("$.title").value("Existing Task"));
+                                .andExpect(jsonPath("$.statusCode").value(200))
+                                .andExpect(jsonPath("$.data.id").value(1))
+                                .andExpect(jsonPath("$.data.title").value("Existing Task"));
         }
 
         @Test
@@ -169,8 +221,9 @@ class TaskControllerIntegrationTest {
                 mockMvc.perform(get("/api/tasks/{id}", 99)
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.message").value("Task not found with id: 99")); // Custom
-                                                                                                       // ErrorResponse
+                                .andExpect(jsonPath("$.statusCode").value(404))
+                                .andExpect(jsonPath("$.error.message").value("Task not found with id: 99"))
+                                .andExpect(jsonPath("$.data").doesNotExist());
         }
 
         @Test
@@ -186,9 +239,9 @@ class TaskControllerIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.id").value(1))
-                                .andExpect(jsonPath("$.title").value("Updated Title"))
-                                .andExpect(jsonPath("$.completed").value(true));
+                                .andExpect(jsonPath("$.statusCode").value(200))
+                                .andExpect(jsonPath("$.data.id").value(1))
+                                .andExpect(jsonPath("$.data.title").value("Updated Title"));
         }
 
         @Test
@@ -204,7 +257,9 @@ class TaskControllerIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.message").value("Task not found with id: 99"));
+                                .andExpect(jsonPath("$.statusCode").value(404))
+                                .andExpect(jsonPath("$.error.message").value("Task not found with id: 99"))
+                                .andExpect(jsonPath("$.data").doesNotExist());
         }
 
         @Test
@@ -217,7 +272,9 @@ class TaskControllerIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.message").exists()); // GlobalExceptionHandler will catch this
+                                .andExpect(jsonPath("$.statusCode").value(400))
+                                .andExpect(jsonPath("$.error.title").value("Title cannot be blank"))
+                                .andExpect(jsonPath("$.data").doesNotExist());
         }
 
         @Test
@@ -225,7 +282,8 @@ class TaskControllerIntegrationTest {
                 doNothing().when(taskService).deleteTask(1);
 
                 mockMvc.perform(delete("/api/tasks/{id}", 1))
-                                .andExpect(status().isNoContent());
+                                .andExpect(status().isNoContent())
+                                .andExpect(content().string(""));
         }
 
         @Test
@@ -235,6 +293,8 @@ class TaskControllerIntegrationTest {
 
                 mockMvc.perform(delete("/api/tasks/{id}", 99))
                                 .andExpect(status().isNotFound())
-                                .andExpect(jsonPath("$.message").value("Task not found with id: 99"));
+                                .andExpect(jsonPath("$.statusCode").value(404))
+                                .andExpect(jsonPath("$.error.message").value("Task not found with id: 99"))
+                                .andExpect(jsonPath("$.data").doesNotExist());
         }
 }

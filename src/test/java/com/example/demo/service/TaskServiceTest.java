@@ -71,7 +71,8 @@ class TaskServiceTest {
         verify(taskRepository, times(1)).findAll(pageable);
         verify(taskRepository, never()).findByCompleted(anyBoolean(), any(Pageable.class));
         verify(taskRepository, never()).findByTitleContainingIgnoreCase(anyString(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(), any(Pageable.class));
+        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(),
+                any(Pageable.class));
     }
 
     @Test
@@ -87,7 +88,8 @@ class TaskServiceTest {
         verify(taskRepository, times(1)).findByTitleContainingIgnoreCase("groceries", pageable);
         verify(taskRepository, never()).findAll(any(Pageable.class));
         verify(taskRepository, never()).findByCompleted(anyBoolean(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(), any(Pageable.class));
+        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(),
+                any(Pageable.class));
     }
 
     @Test
@@ -103,13 +105,15 @@ class TaskServiceTest {
         verify(taskRepository, times(1)).findByCompleted(true, pageable);
         verify(taskRepository, never()).findAll(any(Pageable.class));
         verify(taskRepository, never()).findByTitleContainingIgnoreCase(anyString(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(), any(Pageable.class));
+        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(),
+                any(Pageable.class));
     }
 
     @Test
     void getAllTasks_filterByTitleAndCompleted_shouldReturnPageOfFilteredTasks() {
         Page<Task> taskPage = new PageImpl<>(Arrays.asList(task1), pageable, 1);
-        when(taskRepository.findByTitleContainingIgnoreCaseAndCompleted(eq("groceries"), eq(false), any(Pageable.class))).thenReturn(taskPage);
+        when(taskRepository.findByTitleContainingIgnoreCaseAndCompleted(eq("groceries"), eq(false),
+                any(Pageable.class))).thenReturn(taskPage);
 
         Page<TaskResponse> result = taskService.getAllTasks("groceries", false, pageable);
 

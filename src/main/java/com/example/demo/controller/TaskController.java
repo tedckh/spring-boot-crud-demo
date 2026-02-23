@@ -3,7 +3,9 @@ package com.example.demo.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,8 +49,30 @@ public class TaskController {
   public Page<TaskResponse> getAllTasks(
       @RequestParam(required = false) String title,
       @RequestParam(required = false) Boolean completed,
-      Pageable pageable) {
-    log.info("Received request to get tasks with filters - title: '{}', completed: '{}', pageable: {}", title, completed, pageable);
+      @RequestParam(defaultValue = "0") int offset,
+      @RequestParam(defaultValue = "20") int limit,
+      @RequestParam(required = false) String sortBy) {
+
+    log.info(
+        "Received request to get tasks with filters - title: '{}', completed: '{}', offset: {}, limit: {}, sortBy: '{}'",
+        title, completed, offset, limit, sortBy);
+
+    Sort sort = Sort.unsorted();
+    if (sortBy != null && !sortBy.isEmpty()) {
+      String property = sortBy;
+      Sort.Direction direction = Sort.Direction.ASC;
+      if (sortBy.startsWith("-")) {
+        property = sortBy.substring(1);
+        direction = Sort.Direction.DESC;
+      }
+      sort = Sort.by(direction, property);
+    } else {
+      sort = Sort.by("id");
+    }
+
+    int page = offset / limit;
+    Pageable pageable = PageRequest.of(page, limit, sort);
+
     return taskService.getAllTasks(title, completed, pageable);
   }
 

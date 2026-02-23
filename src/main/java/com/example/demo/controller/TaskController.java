@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +12,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.demo.model.Task;
+import com.example.demo.dto.CreateTaskRequest;
+import com.example.demo.dto.TaskResponse;
+import com.example.demo.dto.UpdateTaskRequest;
 import com.example.demo.service.TaskService;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -27,23 +33,23 @@ public class TaskController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public Task createTask(@RequestBody Task newTask) {
-    return taskService.createTask(newTask);
+  public TaskResponse createTask(@RequestBody @Valid CreateTaskRequest request) {
+    return taskService.createTask(request);
   }
 
   @GetMapping
-  public List<Task> getAllTasks() {
+  public List<TaskResponse> getAllTasks() {
     return taskService.getAllTasks();
   }
 
   @GetMapping("/{id}")
-  public Task getTaskById(@PathVariable Integer id) {
+  public TaskResponse getTaskById(@PathVariable Integer id) {
     return taskService.getTaskById(id);
   }
 
   @PutMapping("/{id}")
-  public Task updateTask(@PathVariable Integer id, @RequestBody Task updatedTask) {
-    return taskService.updateTask(id, updatedTask);
+  public TaskResponse updateTask(@PathVariable Integer id, @RequestBody @Valid UpdateTaskRequest request) {
+    return taskService.updateTask(id, request);
   }
 
   @DeleteMapping("/{id}")
@@ -53,12 +59,12 @@ public class TaskController {
   }
 
   @GetMapping("/completed")
-  public List<Task> getTasksByCompletedStatus(@RequestParam boolean completed) {
+  public List<TaskResponse> getTasksByCompletedStatus(@RequestParam boolean completed) {
     return taskService.findByCompleted(completed);
   }
 
   @GetMapping("/title")
-  public List<Task> getTasksByTitle(@RequestParam String title) {
+  public List<TaskResponse> getTasksByTitle(@RequestParam String title) {
     return taskService.findByTitle(title);
   }
 

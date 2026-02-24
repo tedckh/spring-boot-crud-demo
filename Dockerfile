@@ -17,4 +17,4 @@ RUN ./mvnw package -Dmaven.test.skip=true
 EXPOSE 8080
 
 # Run the jar file
-ENTRYPOINT ["java", "-jar", "target/demo-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "target/spring-boot-crud-api-0.0.1-SNAPSHOT.jar"]

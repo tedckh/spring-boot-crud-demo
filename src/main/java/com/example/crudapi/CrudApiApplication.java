@@ -12,10 +12,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
-public class DemoApplication {
+public class CrudApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
+		SpringApplication.run(CrudApiApplication.class, args);
 	}
 
 	@Bean

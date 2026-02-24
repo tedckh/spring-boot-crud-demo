@@ -66,11 +66,17 @@ Alternatively, after building, you can run the JAR directly:
 ```bash
 java -jar target/demo-0.0.1-SNAPSHOT.jar
 ```
-The API server will start on `http://localhost:8080`.
+The API server will start on `http://localhost:8080` (the default, or your configured port, see below).
+
+### Port Configuration
+The server port can be configured by adding a `server.port` property to `src/main/resources/application.properties`. For example:
+```properties
+server.port=XXXX # Replace XXXX with your desired port, e.g., 8081
+```
 
 ## API Endpoints
 
-The base URL for the API is `http://localhost:8080/api/tasks`.
+The base URL for the API is `http://localhost:<port>/api/tasks`.
 
 ### `Task` Resource Endpoints
 
@@ -93,12 +99,12 @@ You can append the following query parameters to `GET /api/tasks`:
 *   `sortBy`: (Optional) Sorting criteria in the format `property` (ascending) or `-property` (descending). Default sort is by `createdDate` ascending.
 
 **Examples:**
-*   `GET /api/tasks?title=spring&completed=false&offset=0&limit=5&sortBy=title`
-*   `GET /api/tasks?completed=true&sortBy=-id`
+*   `GET http://localhost:8080/api/tasks?title=spring&completed=false&offset=0&limit=5&sortBy=title`
+*   `GET http://localhost:8080/api/tasks?completed=true&sortBy=-id`
 
 ### Request Body Examples
 
-**POST /api/tasks (Create a new task):**
+**POST http://localhost:8080/api/tasks (Create a new task):**
 ```json
 {
     "title": "Learn Spring Boot",
@@ -106,7 +112,7 @@ You can append the following query parameters to `GET /api/tasks`:
 }
 ```
 
-**PUT /api/tasks/{id} (Update an existing task):**
+**PUT http://localhost:8080/api/tasks/{id} (Update an existing task):**
 ```json
 {
     "title": "Master Spring Boot",
@@ -114,7 +120,7 @@ You can append the following query parameters to `GET /api/tasks`:
 }
 ```
 
-**PATCH /api/tasks/{id} (Partially update an existing task):**
+**PATCH http://localhost:8080/api/tasks/{id} (Partially update an existing task):**
 ```json
 {
     "title": "Only change title"
@@ -132,7 +138,7 @@ or
 All API responses are wrapped in a standard JSON envelope for consistency.
 
 ### Successful Response (Single Item)
-For `GET /api/tasks/{id}`, `POST /api/tasks`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}`. The `statusCode` will reflect the HTTP status (e.g., `200` for OK, `201` for Created).
+For `GET http://localhost:8080/api/tasks/{id}`, `POST http://localhost:8080/api/tasks`, `PUT http://localhost:8080/api/tasks/{id}`, `PATCH http://localhost:8080/api/tasks/{id}`. The `statusCode` will reflect the HTTP status (e.g., `200` for OK, `201` for Created).
 ```json
 {
     "statusCode": 200,
@@ -151,7 +157,7 @@ For `GET /api/tasks/{id}`, `POST /api/tasks`, `PUT /api/tasks/{id}`, `PATCH /api
 ```
 
 ### Successful Response (Paginated List)
-For `GET /api/tasks`.
+For `GET http://localhost:8080/api/tasks`.
 ```json
 {
     "statusCode": 200,
@@ -226,4 +232,4 @@ Ensure your PostgreSQL container is running and accessible (as per "Setup and Ru
 ```bash
 docker run -p 8080:8080 spring-boot-task-api
 ```
-Your API will be available at `http://localhost:8080`.
+Your API will be available at `http://localhost:8080` (or the port you mapped, make sure to adjust the `-p` flag if you use a different port).

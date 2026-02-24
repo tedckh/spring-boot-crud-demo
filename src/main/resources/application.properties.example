@@ -10,3 +10,15 @@ spring.jpa.hibernate.ddl-auto=update
 
 # Specify the dialect for PostgreSQL
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+# Set the JDBC timezone to UTC
+spring.jpa.properties.hibernate.jdbc.time_zone=UTC
+
+# Logging Configuration
+logging.level.root=INFO
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t] %-40.40c{1.} : %m%n
+
+
+# Server Port
+# Default to 8080, can be overridden in application.properties
+server.port=8080

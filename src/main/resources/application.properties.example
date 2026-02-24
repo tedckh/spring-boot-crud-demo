@@ -1,12 +1,12 @@
 # PostgreSQL Database Configuration
-# IMPORTANT: Please replace the placeholder values below with your actual database details.
 #
-# Use 'localhost' if you are running the Spring Boot application directly on your host machine.
-# Use 'host.docker.internal' if you are running the application inside a Docker container
-# and the database is running on your host machine.
-spring.datasource.url=jdbc:postgresql://localhost:5432/<db-name>
-spring.datasource.username=<username>
-spring.datasource.password=<password>
+# When running with Docker Compose, the following properties are automatically configured
+# from the environment variables set in the docker-compose.yml file.
+#
+# You can override these values here for local development without Docker.
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/taskdb}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:user}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:password}
 
 # This setting tells Hibernate to update the database schema on startup.
 # For production, you might want to use a more robust solution like Flyway or Liquibase.

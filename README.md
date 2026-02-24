@@ -25,67 +25,39 @@ Before you begin, ensure you have the following installed:
 
 ## Setup and Running the Application
 
-### 1. Start the PostgreSQL Database
+This project is configured to run with Docker Compose, which simplifies the setup of the application and the PostgreSQL database.
 
-It is recommended to run PostgreSQL using Docker.
+### 1. Start the Application and Database
 
-```bash
-docker run --name local-postgres -e POSTGRES_DB=your_database -e POSTGRES_USER=your_username -e POSTGRES_PASSWORD=your_password -p 5432:5432 -d postgres:16
-```
-
-**Important:** Replace `your_database`, `your_username`, and `your_password` with your desired credentials. Remember these as you'll need them for `application.properties`.
-
-### 2. Configure Database Connection
-
-The project expects a `src/main/resources/application.properties` file for database configuration.
-
-1. Copy the example file:
-
-   ```bash
-   cp src/main/resources/application.properties.example src/main/resources/application.properties
-   ```
-
-2. Open `src/main/resources/application.properties` and fill in your PostgreSQL credentials to match the Docker command above:
-
-   ```properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/your_database
-   spring.datasource.username=your_username
-   spring.datasource.password=your_password
-   ```
-
-### 3. Build and Run the Spring Boot Application
-
-Navigate to the project root and use the Maven Wrapper:
-
-**Build:**
+Navigate to the project root and run the following command:
 
 ```bash
-./mvnw clean install
+docker-compose up --build
 ```
 
-This will compile the application, run all tests, and package it into a JAR file.
+This single command will:
 
-**Run:**
+1.  Build the Docker image for the Spring Boot application.
+2.  Start a PostgreSQL database container.
+3.  Start the application container, preconfigured to connect to the database.
+
+The API server will start on `http://localhost:8080`.
+
+### 2. Stop the Application
+
+To stop all the services, press `Ctrl+C` in the terminal where the services are running, and then run:
 
 ```bash
-./mvnw spring-boot:run
+docker-compose down
 ```
 
-Alternatively, after building, you can run the JAR directly:
+This will stop and remove the containers defined in the `docker-compose.yml` file.
 
-```bash
-java -jar target/spring-boot-crud-api-0.0.1-SNAPSHOT.jar
-```
+## API Documentation
 
-The API server will start on `http://localhost:8080` (the default, or your configured port, see below).
+With the application running, you can access the interactive API documentation (Swagger UI) at the following URL:
 
-### Port Configuration
-
-The server port can be configured by adding a `server.port` property to `src/main/resources/application.properties`. For example:
-
-```properties
-server.port=XXXX # Replace XXXX with your desired port, e.g., 8081
-```
+[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
 ## API Endpoints
 

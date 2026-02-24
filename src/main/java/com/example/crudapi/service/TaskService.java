@@ -3,7 +3,9 @@ package com.example.crudapi.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,7 +29,11 @@ public class TaskService {
     this.taskRepository = taskRepository;
   }
 
-  public Page<TaskResponse> getAllTasks(String title, Boolean completed, Pageable pageable) {
+  public Page<TaskResponse> getAllTasks(String title, Boolean completed, Integer offset, Integer limit, String sortBy) {
+    Sort sort = Sort.by(sortBy.startsWith("-") ? Sort.Direction.DESC : Sort.Direction.ASC,
+        sortBy.startsWith("-") ? sortBy.substring(1) : sortBy);
+    Pageable pageable = PageRequest.of(offset / limit, limit, sort);
+
     if (title != null && completed != null) {
       log.info("Fetching tasks by title '{}' and completed status '{}' with pageable: {}", title, completed, pageable);
       return taskRepository.findByTitleContainingIgnoreCaseAndCompletedAndIsActive(title, completed, true, pageable)

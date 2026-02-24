@@ -21,6 +21,7 @@ import com.example.crudapi.dto.TaskResponse;
 import com.example.crudapi.dto.UpdateTaskRequest;
 import com.example.crudapi.service.TaskService;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -47,12 +48,15 @@ public class TaskController {
 
   @GetMapping
   public Page<TaskResponse> getAllTasks(
-      @RequestParam(required = false) String title,
-      @RequestParam(required = false) Boolean completed,
-      Pageable pageable) {
-    log.info("Received request to get tasks with filters - title: '{}', completed: '{}', pageable: {}",
-        title, completed, pageable);
-    return taskService.getAllTasks(title, completed, pageable);
+      @Parameter(description = "Filter by task title") @RequestParam(required = false) String title,
+      @Parameter(description = "Filter by task completion status") @RequestParam(required = false) Boolean completed,
+      @Parameter(description = "The number of items to skip before starting to collect the result set") @RequestParam(defaultValue = "0") Integer offset,
+      @Parameter(description = "The number of items to return") @RequestParam(defaultValue = "10") Integer limit,
+      @Parameter(description = "Sorting criteria: property (ascending) or -property (descending)") @RequestParam(defaultValue = "createdDate") String sortBy) {
+    log.info(
+        "Received request to get tasks with filters - title: '{}', completed: '{}', offset: {}, limit: {}, sortBy: {}",
+        title, completed, offset, limit, sortBy);
+    return taskService.getAllTasks(title, completed, offset, limit, sortBy);
   }
 
   @GetMapping("/{id}")

@@ -1,5 +1,5 @@
 # Use an official OpenJDK runtime as a parent image
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 
 # Set the working directory
 WORKDIR /app
@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy the Maven project files
 # This helps Docker cache the dependencies layer if pom.xml doesn't change
 COPY pom.xml .
+COPY mvnw .
+COPY mvnw.cmd .
+COPY .mvn ./.mvn
 COPY src ./src
 
 # Build the application

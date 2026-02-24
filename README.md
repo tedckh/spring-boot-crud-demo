@@ -91,6 +91,12 @@ server.port=XXXX # Replace XXXX with your desired port, e.g., 8081
 
 The base URL for the API is `http://localhost:<port>/api/tasks`.
 
+## Postman Collection
+
+You can import the Postman collection for this API using the following link:
+
+[Postman Collection](https://.postman.co/workspace/My-Workspace~b5610688-11dc-4c8b-8a9c-e36a3da34314/collection/11327112-859b91eb-4b52-4ac1-a42b-e34448f77d71?action=share&creator=11327112&active-environment=11327112-4f33c8e8-fa28-49b5-a445-580f67357cdb)
+
 ### `Task` Resource Endpoints
 
 | Method   | Path              | Description                                                                         |

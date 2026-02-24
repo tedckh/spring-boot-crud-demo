@@ -5,13 +5,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+
+import com.example.demo.base.BaseEntity;
 
 @Entity
 @Table(name = "tasks")
-public class Task {
+public class Task extends BaseEntity {
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "task_seq")
+  @SequenceGenerator(name = "task_seq", sequenceName = "task_id_seq", allocationSize = 1)
   private Integer id;
 
   @Column(nullable = false)

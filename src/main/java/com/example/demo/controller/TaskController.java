@@ -16,12 +16,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.CreateTaskRequest;
+import com.example.demo.dto.PatchTaskRequest;
 import com.example.demo.dto.TaskResponse;
 import com.example.demo.dto.UpdateTaskRequest;
 import com.example.demo.service.TaskService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
@@ -63,6 +65,12 @@ public class TaskController {
   public TaskResponse updateTask(@PathVariable Integer id, @RequestBody @Valid UpdateTaskRequest request) {
     log.info("Received request to update task with ID: {}", id);
     return taskService.updateTask(id, request);
+  }
+
+  @PatchMapping("/{id}")
+  public TaskResponse patchTask(@PathVariable Integer id, @RequestBody @Valid PatchTaskRequest request) {
+      log.info("Received request to patch task with ID: {}", id);
+      return taskService.patchTask(id, request);
   }
 
   @DeleteMapping("/{id}")

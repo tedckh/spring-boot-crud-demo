@@ -5,14 +5,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Integer> {
-  Page<Task> findByTitle(String title, Pageable pageable);
 
-  Page<Task> findByTitleContainingIgnoreCase(String keyword, Pageable pageable);
+  Page<Task> findAllByIsActive(boolean isActive, Pageable pageable);
 
-  Page<Task> findByCompleted(boolean completed, Pageable pageable);
+  Page<Task> findByTitleContainingIgnoreCaseAndIsActive(String keyword, boolean isActive, Pageable pageable);
 
-  Page<Task> findByTitleContainingIgnoreCaseAndCompleted(String keyword, boolean completed, Pageable pageable);
+  Page<Task> findByCompletedAndIsActive(boolean completed, boolean isActive, Pageable pageable);
+
+  Page<Task> findByTitleContainingIgnoreCaseAndCompletedAndIsActive(String keyword, boolean completed, boolean isActive,
+      Pageable pageable);
+
+  Optional<Task> findByIdAndIsActive(Integer id, boolean isActive);
 }

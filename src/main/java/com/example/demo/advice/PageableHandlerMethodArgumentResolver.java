@@ -40,7 +40,7 @@ public class PageableHandlerMethodArgumentResolver implements HandlerMethodArgum
             }
             sort = Sort.by(direction, property);
         } else {
-            sort = Sort.by("id");
+            sort = Sort.by(Sort.Direction.ASC, "createdDate");
         }
 
         if (limit <= 0) {

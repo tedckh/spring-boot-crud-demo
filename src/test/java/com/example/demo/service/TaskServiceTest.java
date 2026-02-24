@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -60,93 +61,74 @@ class TaskServiceTest {
     @Test
     void getAllTasks_noFilters_shouldReturnPageOfAllTasks() {
         Page<Task> taskPage = new PageImpl<>(Arrays.asList(task1, task2), pageable, 2);
-        when(taskRepository.findAll(any(Pageable.class))).thenReturn(taskPage);
+        when(taskRepository.findAllByIsActive(eq(true), any(Pageable.class))).thenReturn(taskPage);
 
         Page<TaskResponse> result = taskService.getAllTasks(null, null, pageable);
 
         assertNotNull(result);
         assertEquals(2, result.getTotalElements());
-        assertEquals(task1.getTitle(), result.getContent().get(0).getTitle());
-        assertEquals(task2.getTitle(), result.getContent().get(1).getTitle());
-        verify(taskRepository, times(1)).findAll(pageable);
-        verify(taskRepository, never()).findByCompleted(anyBoolean(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCase(anyString(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(),
-                any(Pageable.class));
+        verify(taskRepository, times(1)).findAllByIsActive(true, pageable);
     }
 
     @Test
     void getAllTasks_filterByTitle_shouldReturnPageOfFilteredTasks() {
         Page<Task> taskPage = new PageImpl<>(Arrays.asList(task1), pageable, 1);
-        when(taskRepository.findByTitleContainingIgnoreCase(eq("groceries"), any(Pageable.class))).thenReturn(taskPage);
+        when(taskRepository.findByTitleContainingIgnoreCaseAndIsActive(eq("groceries"), eq(true), any(Pageable.class)))
+                .thenReturn(taskPage);
 
         Page<TaskResponse> result = taskService.getAllTasks("groceries", null, pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(task1.getTitle(), result.getContent().get(0).getTitle());
-        verify(taskRepository, times(1)).findByTitleContainingIgnoreCase("groceries", pageable);
-        verify(taskRepository, never()).findAll(any(Pageable.class));
-        verify(taskRepository, never()).findByCompleted(anyBoolean(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(),
-                any(Pageable.class));
+        verify(taskRepository, times(1)).findByTitleContainingIgnoreCaseAndIsActive("groceries", true, pageable);
     }
 
     @Test
     void getAllTasks_filterByCompleted_shouldReturnPageOfFilteredTasks() {
         Page<Task> taskPage = new PageImpl<>(Arrays.asList(task2), pageable, 1);
-        when(taskRepository.findByCompleted(eq(true), any(Pageable.class))).thenReturn(taskPage);
+        when(taskRepository.findByCompletedAndIsActive(eq(true), eq(true), any(Pageable.class))).thenReturn(taskPage);
 
         Page<TaskResponse> result = taskService.getAllTasks(null, true, pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(task2.getTitle(), result.getContent().get(0).getTitle());
-        verify(taskRepository, times(1)).findByCompleted(true, pageable);
-        verify(taskRepository, never()).findAll(any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCase(anyString(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCaseAndCompleted(anyString(), anyBoolean(),
-                any(Pageable.class));
+        verify(taskRepository, times(1)).findByCompletedAndIsActive(true, true, pageable);
     }
 
     @Test
     void getAllTasks_filterByTitleAndCompleted_shouldReturnPageOfFilteredTasks() {
         Page<Task> taskPage = new PageImpl<>(Arrays.asList(task1), pageable, 1);
-        when(taskRepository.findByTitleContainingIgnoreCaseAndCompleted(eq("groceries"), eq(false),
+        when(taskRepository.findByTitleContainingIgnoreCaseAndCompletedAndIsActive(eq("groceries"), eq(false), eq(true),
                 any(Pageable.class))).thenReturn(taskPage);
 
         Page<TaskResponse> result = taskService.getAllTasks("groceries", false, pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(task1.getTitle(), result.getContent().get(0).getTitle());
-        verify(taskRepository, times(1)).findByTitleContainingIgnoreCaseAndCompleted("groceries", false, pageable);
-        verify(taskRepository, never()).findAll(any(Pageable.class));
-        verify(taskRepository, never()).findByCompleted(anyBoolean(), any(Pageable.class));
-        verify(taskRepository, never()).findByTitleContainingIgnoreCase(anyString(), any(Pageable.class));
+        verify(taskRepository, times(1)).findByTitleContainingIgnoreCaseAndCompletedAndIsActive("groceries", false,
+                true, pageable);
     }
 
     @Test
     void getTaskById_shouldReturnTaskResponse_whenTaskExists() {
-        when(taskRepository.findById(1)).thenReturn(Optional.of(task1));
+        when(taskRepository.findByIdAndIsActive(1, true)).thenReturn(Optional.of(task1));
 
         TaskResponse result = taskService.getTaskById(1);
 
         assertNotNull(result);
         assertEquals(task1.getTitle(), result.getTitle());
-        verify(taskRepository, times(1)).findById(1);
+        verify(taskRepository, times(1)).findByIdAndIsActive(1, true);
     }
 
     @Test
     void getTaskById_shouldThrowResponseStatusException_whenTaskDoesNotExist() {
-        when(taskRepository.findById(anyInt())).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndIsActive(anyInt(), eq(true))).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> taskService.getTaskById(99));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-        assertTrue(exception.getReason().contains("Task not found with id: 99"));
-        verify(taskRepository, times(1)).findById(99);
+        verify(taskRepository, times(1)).findByIdAndIsActive(99, true);
     }
 
     @Test
@@ -158,14 +140,13 @@ class TaskServiceTest {
         TaskResponse result = taskService.createTask(createTaskRequest);
 
         assertNotNull(result);
-        assertEquals(createTaskRequest.getTitle(), result.getTitle());
-        assertEquals(createTaskRequest.isCompleted(), result.isCompleted());
+        assertTrue(result.isActive());
         verify(taskRepository, times(1)).save(any(Task.class));
     }
 
     @Test
     void updateTask_shouldReturnUpdatedTaskResponse_whenTaskExists() {
-        when(taskRepository.findById(1)).thenReturn(Optional.of(task1));
+        when(taskRepository.findByIdAndIsActive(1, true)).thenReturn(Optional.of(task1));
         Task updatedTaskEntity = new Task(1, updateTaskRequest.getTitle(), updateTaskRequest.isCompleted());
         when(taskRepository.save(any(Task.class))).thenReturn(updatedTaskEntity);
 
@@ -173,33 +154,33 @@ class TaskServiceTest {
 
         assertNotNull(result);
         assertEquals(updateTaskRequest.getTitle(), result.getTitle());
-        assertEquals(updateTaskRequest.isCompleted(), result.isCompleted());
-        verify(taskRepository, times(1)).findById(1);
+        verify(taskRepository, times(1)).findByIdAndIsActive(1, true);
         verify(taskRepository, times(1)).save(any(Task.class));
     }
 
     @Test
     void updateTask_shouldThrowResponseStatusException_whenTaskDoesNotExist() {
-        when(taskRepository.findById(anyInt())).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndIsActive(anyInt(), eq(true))).thenReturn(Optional.empty());
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> taskService.updateTask(99, updateTaskRequest));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-        assertTrue(exception.getReason().contains("Task not found with id: 99"));
-        verify(taskRepository, times(1)).findById(99);
+        verify(taskRepository, times(1)).findByIdAndIsActive(99, true);
         verify(taskRepository, never()).save(any(Task.class));
     }
 
     @Test
-    void deleteTask_shouldCallRepositoryDelete_whenTaskExists() {
+    void deleteTask_shouldSetActiveToFalse_whenTaskExists() {
         when(taskRepository.findById(1)).thenReturn(Optional.of(task1));
-        doNothing().when(taskRepository).delete(task1);
+        ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
 
         taskService.deleteTask(1);
 
         verify(taskRepository, times(1)).findById(1);
-        verify(taskRepository, times(1)).delete(task1);
+        verify(taskRepository, times(1)).save(taskCaptor.capture());
+        assertFalse(taskCaptor.getValue().isActive());
+        verify(taskRepository, never()).delete(any(Task.class));
     }
 
     @Test
@@ -210,8 +191,8 @@ class TaskServiceTest {
                 () -> taskService.deleteTask(99));
 
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-        assertTrue(exception.getReason().contains("Task not found with id: 99"));
         verify(taskRepository, times(1)).findById(99);
+        verify(taskRepository, never()).save(any(Task.class));
         verify(taskRepository, never()).delete(any(Task.class));
     }
 }

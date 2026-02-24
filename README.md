@@ -80,6 +80,7 @@ The base URL for the API is `http://localhost:8080/api/tasks`.
 | `GET`    | `/api/tasks`      | Retrieves all tasks with optional title, completed status, pagination, and sorting. |
 | `GET`    | `/api/tasks/{id}` | Retrieves a single task by its ID.                                  |
 | `PUT`    | `/api/tasks/{id}` | Updates an existing task by ID.                                     |
+| `PATCH`  | `/api/tasks/{id}` | Partially updates an existing task by ID.                           |
 | `DELETE` | `/api/tasks/{id}` | Deletes a task by its ID.                                           |
 
 ### Filtering, Pagination and Sorting Parameters (for GET /api/tasks)
@@ -89,26 +90,63 @@ You can append the following query parameters to `GET /api/tasks`:
 *   `completed`: (Optional) Filter tasks by completion status (`true` or `false`).
 *   `offset`: (Optional) The starting index of the results (default: `0`).
 *   `limit`: (Optional) The maximum number of items to return (default: `20`).
-*   `sortBy`: (Optional) Sorting criteria in the format `property` (ascending) or `-property` (descending). Default sort is by `id` ascending.
+*   `sortBy`: (Optional) Sorting criteria in the format `property` (ascending) or `-property` (descending). Default sort is by `createdDate` ascending.
 
 **Examples:**
 *   `GET /api/tasks?title=spring&completed=false&offset=0&limit=5&sortBy=title`
 *   `GET /api/tasks?completed=true&sortBy=-id`
+
+### Request Body Examples
+
+**POST /api/tasks (Create a new task):**
+```json
+{
+    "title": "Learn Spring Boot",
+    "completed": false
+}
+```
+
+**PUT /api/tasks/{id} (Update an existing task):**
+```json
+{
+    "title": "Master Spring Boot",
+    "completed": true
+}
+```
+
+**PATCH /api/tasks/{id} (Partially update an existing task):**
+```json
+{
+    "title": "Only change title"
+}
+```
+or
+```json
+{
+    "completed": true
+}
+```
 
 ## API Response Structure
 
 All API responses are wrapped in a standard JSON envelope for consistency.
 
 ### Successful Response (Single Item)
-For `GET /api/tasks/{id}`, `POST /api/tasks`, `PUT /api/tasks/{id}`. The `statusCode` will reflect the HTTP status (e.g., `200` for OK, `201` for Created).
+For `GET /api/tasks/{id}`, `POST /api/tasks`, `PUT /api/tasks/{id}`, `PATCH /api/tasks/{id}`. The `statusCode` will reflect the HTTP status (e.g., `200` for OK, `201` for Created).
 ```json
 {
     "statusCode": 200,
     "data": {
         "id": 1,
         "title": "Learn Spring Boot",
-        "completed": false
-    }
+        "completed": false,
+        "active": true,
+        "createdBy": "SYSTEM",
+        "createdDate": "2026-02-24T10:30:00Z",
+        "lastModifiedBy": "SYSTEM",
+        "lastModifiedDate": "2026-02-24T10:30:00Z"
+    },
+    "error": null
 }
 ```
 
@@ -122,16 +160,27 @@ For `GET /api/tasks`.
             {
                 "id": 1,
                 "title": "Learn Spring Boot",
-                "completed": false
+                "completed": false,
+                "active": true,
+                "createdBy": "SYSTEM",
+                "createdDate": "2026-02-24T10:30:00Z",
+                "lastModifiedBy": "SYSTEM",
+                "lastModifiedDate": "2026-02-24T10:30:00Z"
             },
             {
                 "id": 2,
                 "title": "Write some tests",
-                "completed": true
+                "completed": true,
+                "active": true,
+                "createdBy": "SYSTEM",
+                "createdDate": "2026-02-24T10:35:00Z",
+                "lastModifiedBy": "SYSTEM",
+                "lastModifiedDate": "2026-02-24T10:35:00Z"
             }
         ],
         "total": 2
-    }
+    },
+    "error": null
 }
 ```
 
@@ -142,7 +191,8 @@ For any failed request (e.g., validation error, item not found).
     "statusCode": 404,
     "data": null,
     "error": {
-        "message": "Task not found with id: 99"
+        "message": "Task not found with id: 99",
+        "detail": "org.springframework.web.server.ResponseStatusException: 404 NOT_FOUND \"Task not found with id: 99\""
     }
 }
 ```

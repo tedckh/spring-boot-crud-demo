@@ -17,6 +17,8 @@ public class TaskMapper {
     if (task == null) {
       return null;
     }
-    return new TaskResponse(task.getId(), task.getTitle(), task.isCompleted());
+    return new TaskResponse(task.getId(), task.getTitle(), task.isCompleted(),
+        task.isActive(), task.getCreatedBy(), task.getCreatedDate(),
+        task.getLastModifiedBy(), task.getLastModifiedDate());
   }
 }
